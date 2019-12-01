@@ -1,4 +1,4 @@
-service: twitter-trending-movies-bot
+service: twitter-dollar-bot
 
 frameworkVersion: ">=1.1.0 <2.0.0"
 
@@ -8,7 +8,7 @@ provider:
     runtime: nodejs10.x
     region: us-east-1
 
-    environment: ${file(./.env/${opt:stage}.yml)}
+    environment: ${file(./.env/${self:provider.stage}.yml)}
 
     tracing:
         apiGateway: true
@@ -25,14 +25,13 @@ plugins:
     - serverless-plugin-tracing
 
 functions:
-    tweetBestMoviesJob:
-        handler: functions/bestMovies.job
+    tweetDollarJob:
+        handler: functions/tweetDollar.job
         events:
-            - schedule:
-              rate: cron(0 18 * * *)
+            - schedule: cron(13 18 * * ? *)
 
-    tweetBestMoviesEndpoint:
-        handler: functions/bestMovies.endpoint
+    tweetDollarEndpoint:
+        handler: functions/tweetDollar.endpoint
         events:
             - http:
                   path: ping

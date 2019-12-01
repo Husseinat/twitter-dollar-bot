@@ -1,5 +1,5 @@
 const axios = require("axios");
 
 module.exports = axios.create({
-    baseURL: "https://api.themoviedb.org/3"
+    baseURL: "https://economia.awesomeapi.com.br"
 });

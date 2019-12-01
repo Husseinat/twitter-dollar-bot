@@ -1,34 +1,36 @@
 "use strict";
 
 const moment = require("moment");
+moment.locale("pt");
 
 const awsXRay = require("aws-xray-sdk");
 const awsSdk = awsXRay.captureAWS(require("aws-sdk"));
 
 const twitterApi = require("../api/twitter");
-const theMovieDbApi = require("../api/theMovieDb");
+const economiaApi = require("../api/economiaApi");
 
-const getTweetMessage = movies =>
-    ` 🔝🎥 ${moment().format("MM/DD/YYYY")} BEST MOVIES 🎞🎬\n\n${movies
-        .slice(0, 5)
-        .map((m, i) => `${i + 1}🏅   ${m.vote_average}⭐ ${m.title}`)
-        .join("\n")}\n\n\nsource: themoviedb.org`;
+const getTweetMessage = dollarValue =>
+    ` No dia ${moment().format("DD [de] MMMM [de] YYYY")} o dólar tá ${(
+        (parseFloat(dollarValue.high) + parseFloat(dollarValue.low)) /
+        2
+    )
+        .toFixed(2)
+        .replace(".", ",")} reais 💰💵`;
 
-const getMovies = async () =>
-    (await theMovieDbApi.get("/trending/movie/day", { params: { api_key: process.env.TMDB_API_KEY } })).data.results;
+const getDollarValue = async () => (await economiaApi.get("/USD-BRL/1")).data[0];
 
 const tweetBestMovies = async () => {
     try {
         console.log("Started operation");
-        const movies = await getMovies();
-        console.log("Received movies", movies);
-        const tweetMessage = getTweetMessage(movies);
+        const dollarValue = await getDollarValue();
+        console.log("Received dollarValue", dollarValue);
+        const tweetMessage = getTweetMessage(dollarValue);
         console.log("Tweet message", tweetMessage);
         await twitterApi.post("statuses/update", { status: tweetMessage });
         console.log("Finished operation");
         return tweetMessage;
     } catch (e) {
-        console.log("Error in best movies operation", e);
+        console.log("Error in operation", e);
         return e.toString();
     }
 };
