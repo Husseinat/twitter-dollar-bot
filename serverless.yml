@@ -1,0 +1,39 @@
+service: twitter-trending-movies-bot
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+    name: aws
+    stage: ${opt:stage, 'dev'}
+    runtime: nodejs10.x
+    region: us-east-1
+
+    environment: ${file(./.env/${opt:stage}.yml)}
+
+    tracing:
+        apiGateway: true
+        lambda: true
+
+    iamRoleStatements:
+        - Effect: "Allow"
+          Action:
+              - "xray:PutTraceSegments"
+              - "xray:PutTelemetryRecords"
+          Resource:
+              - "*"
+plugins:
+    - serverless-plugin-tracing
+
+functions:
+    tweetBestMoviesJob:
+        handler: functions/bestMovies.job
+        events:
+            - schedule:
+              rate: cron(0 18 * * *)
+
+    tweetBestMoviesEndpoint:
+        handler: functions/bestMovies.endpoint
+        events:
+            - http:
+                  path: ping
+                  method: get
