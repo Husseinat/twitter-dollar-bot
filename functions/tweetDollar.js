@@ -14,7 +14,7 @@ const economiaApi = require("../api/economiaApi");
 
 const getTweetMessage = (dollarValue, now) =>
     ` No dia ${now.format("DD [de] MMMM [de] YYYY")} o dólar tá ${(
-        (parseFloat(dollarValue.high) + parseFloat(dollarValue.low)) /
+        (parseFloat(dollarValue.bid) + parseFloat(dollarValue.ask)) /
         2
     )
         .toFixed(2)
