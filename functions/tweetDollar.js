@@ -19,7 +19,7 @@ const getTweetMessage = dollarValue =>
 
 const getDollarValue = async () => (await economiaApi.get("/USD-BRL/1")).data[0];
 
-const tweetBestMovies = async () => {
+const tweetDollar = async () => {
     try {
         console.log("Started operation");
         const dollarValue = await getDollarValue();
@@ -40,14 +40,14 @@ module.exports = {
         if (event.queryStringParameters && event.queryStringParameters.key === process.env.API_CALL_KEY)
             return {
                 statusCode: 200,
-                body: await tweetBestMovies()
+                body: await tweetDollar()
             };
         return { statusCode: 403, body: "Forbidden" };
     },
     job: async event => {
         return {
             statusCode: 200,
-            body: await tweetBestMovies()
+            body: await tweetDollar()
         };
     }
 };

@@ -34,5 +34,5 @@ functions:
         handler: functions/tweetDollar.endpoint
         events:
             - http:
-                  path: ping
+                  path: tweet
                   method: get
