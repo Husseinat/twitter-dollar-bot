@@ -21,6 +21,16 @@ provider:
               - "xray:PutTelemetryRecords"
           Resource:
               - "*"
+        - Effect: Allow
+          Action:
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.HIST_DOLLAR_TABLE}"
+
 plugins:
     - serverless-plugin-tracing
 
@@ -36,3 +46,20 @@ functions:
             - http:
                   path: tweet
                   method: get
+
+resources:
+    Resources:
+        HistoricalDollarDynamoDbTable:
+            Type: "AWS::DynamoDB::Table"
+            DeletionPolicy: Retain
+            Properties:
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                ProvisionedThroughput:
+                    ReadCapacityUnits: 2
+                    WriteCapacityUnits: 2
+                TableName: ${self:provider.environment.HIST_DOLLAR_TABLE}
