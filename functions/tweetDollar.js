@@ -26,7 +26,7 @@ const tweetDollar = async () => {
     console.log("Started operation");
     try {
         const dollarValue = await getDollarValue();
-        const now = moment(dollarValue.create_date, "YYYY-MM-DD hh:mm:ss");
+        const now = moment();
         await dynamoDb
             .put({
                 TableName: process.env.HIST_DOLLAR_TABLE,
