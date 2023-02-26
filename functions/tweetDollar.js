@@ -1,43 +1,54 @@
 "use strict";
 
-const uuid = require("uuid");
-
 const moment = require("moment");
 moment.locale("pt");
-
-const awsXRay = require("aws-xray-sdk");
-const awsSdk = awsXRay.captureAWS(require("aws-sdk"));
-const dynamoDb = new awsSdk.DynamoDB.DocumentClient();
 
 const twitterApi = require("../api/twitter");
 const economiaApi = require("../api/economiaApi");
 
-const getTweetMessage = (dollarValue, now) =>
-    ` No dia ${now.format("DD [de] MMMM [de] YYYY")} o dólar tá ${(
-        (parseFloat(dollarValue.bid) + parseFloat(dollarValue.ask)) /
-        2
-    )
-        .toFixed(2)
-        .replace(".", ",")} reais 💰💵`;
+const getTodaysValueFromSequence = (dollarCloseSequence) => dollarCloseSequence[0];
 
-const getDollarValue = async () => (await economiaApi.get("/USD-BRL/1")).data[0];
+const avgBidAsk = (dollarCloseDay) => (parseFloat(dollarCloseDay.bid) + parseFloat(dollarCloseDay.ask)) / 2;
+
+const nDaysHighest = (dollarCloseSequence) => {
+    let i = 1, todaysValue = getTodaysValueFromSequence(dollarCloseSequence);
+    while (avgBidAsk(todaysValue) > avgBidAsk(dollarCloseSequence[i]) && i < dollarCloseSequence.length)
+    {
+        ++i;
+    }
+    return i - 1;
+}
+
+const nDaysLowest = (dollarCloseSequence) => {
+    let i = 1, todaysValue = getTodaysValueFromSequence(dollarCloseSequence);
+    while (avgBidAsk(todaysValue) < (dollarCloseSequence[i]) && i < dollarCloseSequence.length)
+    {
+        ++i;
+    }
+    return i - 1;
+}
+
+const nDaysToBeRelevant = 3;
+
+const getTweetMessage = (dollarCloseSequence, nDaysHighest, nDaysLowest, now) =>
+    ` No dia ${now.format("DD [de] MMMM [de] YYYY")} o dólar tá ${
+        avgBidAsk(getTodaysValueFromSequence(dollarCloseSequence))
+        .toFixed(2)
+        .replace(".", ",")} reais 💰💵` +
+    (nDaysHighest >= nDaysToBeRelevant && nDaysHighest != dollarCloseSequence.length ? `\n\n⚠️ Hoje o dólar atingiu a máxima dos últimos ${nDaysHighest} dias úteis`:"" ) + 
+    (nDaysLowest >= nDaysToBeRelevant && nDaysLowest != dollarCloseSequence.length ? `\n\n⚠️ Hoje o dólar atingiu a minima dos últimos ${nDaysLowest} dias úteis`:"" ) +
+    (nDaysHighest == dollarCloseSequence.length ? `\n\n⚠️ Hoje o dólar atingiu a máxima desde que temos registros(${dollarCloseSequence.length} dias úteis)`:"" ) +
+    (nDaysLowest == dollarCloseSequence.length ? `\n\n⚠️ Hoje o dólar atingiu a mínima desde que temos registros(${dollarCloseSequence.length} dias úteis)`:"" );
+
+const getDollarSequence = async () => (await economiaApi.get("/json/daily/USD-BRL/99999999")).data;
 
 const tweetDollar = async () => {
     console.log("Started operation");
     try {
-        const dollarValue = await getDollarValue();
+        const dollarCloseSequence = await getDollarSequence();
         const now = moment();
-        await dynamoDb
-            .put({
-                TableName: process.env.HIST_DOLLAR_TABLE,
-                Item: {
-                    id: uuid.v1(),
-                    ...dollarValue
-                }
-            })
-            .promise();
-        console.log("Received dollarValue", dollarValue);
-        const tweetMessage = getTweetMessage(dollarValue, now);
+        console.log("Received sequence");
+        const tweetMessage = getTweetMessage(dollarCloseSequence, nDaysHighest(dollarCloseSequence), nDaysLowest(dollarCloseSequence), now);
         console.log("Tweet message", tweetMessage);
         await twitterApi.post("statuses/update", { status: tweetMessage });
         console.log("Finished operation");
