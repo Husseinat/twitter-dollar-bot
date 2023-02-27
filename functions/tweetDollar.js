@@ -42,11 +42,10 @@ const getTweetMessage = (dollarCloseSequence, nDaysHighest, nDaysLowest, now) =>
 
 const getDollarSequence = async () => (await economiaApi.get("/json/daily/USD-BRL/99999999")).data;
 
-const tweetDollar = async () => {
-    console.log("Started operation");
+const tweetDollar = async (now) => {
+    console.log("Started operation", now);
     try {
         const dollarCloseSequence = await getDollarSequence();
-        const now = moment();
         console.log("Received sequence");
         const tweetMessage = getTweetMessage(dollarCloseSequence, nDaysHighest(dollarCloseSequence), nDaysLowest(dollarCloseSequence), now);
         console.log("Tweet message", tweetMessage);
@@ -64,14 +63,14 @@ module.exports = {
         if (event.queryStringParameters && event.queryStringParameters.key === process.env.API_CALL_KEY)
             return {
                 statusCode: 200,
-                body: await tweetDollar()
+                body: await tweetDollar(moment.utc(event.requestContext.requestTimeEpoch))
             };
         return { statusCode: 403, body: "Forbidden" };
     },
     job: async event => {
         return {
             statusCode: 200,
-            body: await tweetDollar()
+            body: await tweetDollar(moment.utc(event.requestContext.requestTimeEpoch))
         };
     }
 };
