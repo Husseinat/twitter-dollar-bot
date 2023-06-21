@@ -3,7 +3,7 @@
 const moment = require("moment");
 moment.locale("pt");
 
-const twitterApi = require("../api/twitter");
+const { twitterClient } = require("../api/twitter");
 const economiaApi = require("../api/economiaApi");
 
 const getTodaysValueFromSequence = (dollarCloseSequence) => dollarCloseSequence[0];
@@ -49,7 +49,7 @@ const tweetDollar = async (now) => {
         console.log("Received sequence");
         const tweetMessage = getTweetMessage(dollarCloseSequence, nDaysHighest(dollarCloseSequence), nDaysLowest(dollarCloseSequence), now);
         console.log("Tweet message", tweetMessage);
-        await twitterApi.post("statuses/update", { status: tweetMessage });
+        await twitterClient.v2.tweet(tweetMessage);
         console.log("Finished operation");
         return tweetMessage;
     } catch (e) {
